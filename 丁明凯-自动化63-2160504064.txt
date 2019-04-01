@@ -1,0 +1,275 @@
+all functions are separated at the bottom of each assignment
+including get_D,get_fliter,deal_freq(processing in frequency),cal_ratio(calculate ratio)
+functions in Assignment_3 are rewrited, especially get_fliter(add Laplace and unmask fliter)
+----------------------------------------------------------------------------------------------------
+Assignment_1 with functions behind
+----------------------------------------------------------------------------------------------------
+clc;clear;
+fig = imread('test1.pgm');
+[row,col] = size(fig);
+R = row *2;
+C = col * 2;
+spec = fft2(fig,R,C);
+
+figure; 
+subplot(1,2,1); 
+imshow(fftshift(log(1 + abs(spec))),[]);
+subplot(1,2,2); 
+mesh(fftshift(log(1 + abs(spec))));
+saveas(gcf,'result_1/a_1_freq1.bmp');
+
+D=get_D(R,C);
+D0=100;
+n=10;
+G=get_fliter('Gaussian',D,D0,n);
+figure; 
+subplot(1,2,1);mesh(fftshift(G)); title("Gaussian"); 
+B=get_fliter('Butterworth',D,D0,n);
+subplot(1,2,2);mesh(fftshift(B));title("Butterworth"); 
+saveas(gcf,'result_1/a_1_fliter1.bmp')
+
+[multiG,gauss]=deal_freq(spec,'G',row,col,G,B);
+[multiB,butter]=deal_freq(spec,'B',row,col,G,B);
+ratioG=cal_ratio('gauss',row,col,spec,multiG,multiB);
+ratioB=cal_ratio('butter',row,col,spec,multiG,multiB);
+figure;
+subplot(1,3,1);imshow(fig);title("origin");
+subplot(1,3,2);imshow(gauss,[]);title(['gauss with ratio ',num2str(ratioG)]);
+subplot(1,3,3);imshow(butter,[]);title(['butter with ratio ',num2str(ratioB)]);
+saveas(gcf,'result_1/a_1_result1.bmp');
+
+function ratio=cal_ratio(string,row,col,spec,multiG,multiB)
+x=0;
+a=0;
+for m = 1:1:row
+    for n = 1:1:col
+        a = a + (abs(spec(m,n))) ^ 2; 
+        switch string
+            case 'gauss'
+                x = x + (abs(multiG(m,n))) ^ 2;
+            case 'butter'
+                x = x + (abs(multiB(m,n))) ^ 2;
+        end
+    end
+end
+ratio=x/a;
+end
+
+function D=get_D(R,C)
+u=0:(R-1);
+v=0:(C-1);
+tempU=find(u > R/2);
+u(tempU)=u(tempU)-R;
+tempV=find(v > C/2);
+v(tempV)=v(tempV)-C;
+[V,U]=meshgrid(v,u);
+D = sqrt(U .^ 2 + V .^ 2);
+end
+
+function Fliter=get_fliter(str,D,D0,n)
+switch str
+    case 'Gaussian'
+        Fliter=exp(-(D.^2)./(2*(D0^2)));
+    case 'Butterworth'
+        Fliter=1./(1+(D/D0).^(2*n));
+end
+end
+
+function [multi,temp]=deal_freq(spec,fli,row,col,G,B)
+switch fli
+    case 'G'
+        multi = spec .* G;
+    case 'B'
+        multi = spec .* B;
+end
+temp=real(ifft2(multi));
+temp=temp(1:row,1:col);
+end
+----------------------------------------------------------------------------------------------------
+Assignment_2 with functions behind
+----------------------------------------------------------------------------------------------------
+clc;clear;
+fig = imread('test3_corrupt.pgm');
+%fig = imread('test4 copy.bmp');
+[row,col] = size(fig);
+R = row *2;
+C = col * 2;
+spec = fft2(fig,R,C);
+
+figure; 
+subplot(1,2,1); 
+imshow(fftshift(log(1 + abs(spec))),[]);
+subplot(1,2,2); 
+mesh(fftshift(log(1 + abs(spec))));
+saveas(gcf,'result_2/a_2_freq3.bmp');
+
+D=get_D(R,C);
+D0=100;
+n=10;
+G=get_fliter('Gaussian',D,D0,n);
+figure; 
+subplot(1,2,1);mesh(fftshift(G)); title("Gaussian"); 
+B=get_fliter('Butterworth',D,D0,n);
+subplot(1,2,2);mesh(fftshift(B));title("Butterworth"); 
+saveas(gcf,'result_2/a_2_fliter3.bmp')
+
+[multiG,gauss]=deal_freq(spec,'G',row,col,G,B);
+[multiB,butter]=deal_freq(spec,'B',row,col,G,B);
+ratioG=cal_ratio('gauss',row,col,spec,multiG,multiB);
+ratioB=cal_ratio('butter',row,col,spec,multiG,multiB);
+figure;
+subplot(1,3,1);imshow(fig);title("origin");
+subplot(1,3,2);imshow(gauss,[]);title(['gauss with ratio ',num2str(ratioG)]);
+subplot(1,3,3);imshow(butter,[]);title(['butter with ratio ',num2str(ratioB)]);
+saveas(gcf,'result_2/a_2_result3.bmp');
+
+function ratio=cal_ratio(string,row,col,spec,multiG,multiB)
+x=0;
+a=0;
+for m = 1:1:row
+    for n = 1:1:col
+        a = a + (abs(spec(m,n))) ^ 2; 
+        switch string
+            case 'gauss'
+                x = x + (abs(multiG(m,n))) ^ 2;
+            case 'butter'
+                x = x + (abs(multiB(m,n))) ^ 2;
+        end
+    end
+end
+ratio=x/a;
+end
+
+function D=get_D(R,C)
+u=0:(R-1);
+v=0:(C-1);
+tempU=find(u > R/2);
+u(tempU)=u(tempU)-R;
+tempV=find(v > C/2);
+v(tempV)=v(tempV)-C;
+[V,U]=meshgrid(v,u);
+D = sqrt(U .^ 2 + V .^ 2);
+end
+
+function Fliter=get_fliter(str,D,D0,n)
+switch str
+    case 'Gaussian'
+        Fliter=1-exp(-(D.^2)./(2*(D0^2)));
+    case 'Butterworth'
+        Fliter=1-1./(1+(D/D0).^(2*n));
+end
+end
+
+function [multi,temp]=deal_freq(spec,fli,row,col,G,B)
+switch fli
+    case 'G'
+        multi = spec .* G;
+    case 'B'
+        multi = spec .* B;
+end
+temp=real(ifft2(multi));
+temp=temp(1:row,1:col);
+end
+----------------------------------------------------------------------------------------------------
+Assignment_3 with functions behind
+----------------------------------------------------------------------------------------------------
+clc;clear;
+%fig = imread('test3_corrupt.pgm');
+fig = imread('test4 copy.bmp');
+[row,col] = size(fig);
+R = row *2;
+C = col * 2;
+spec = fft2(fig,R,C);
+
+figure; 
+subplot(1,2,1); 
+imshow(fftshift(log(1 + abs(spec))),[]);
+subplot(1,2,2); 
+mesh(fftshift(log(1 + abs(spec))));
+saveas(gcf,'result_3/a_3_freq4.bmp');
+
+D=get_D(R,C);
+D0=100;
+n=10;
+% G=get_fliter('Gaussian',D,D0,n);
+L=get_fliter('Laplace',D,D0,n);
+U=get_fliter('unmask',D,0.05*R,n);
+figure; 
+subplot(1,2,1);mesh(abs(L));title("Laplace"); 
+subplot(1,2,2);mesh(abs(U));title("unmask with k=1"); 
+% subplot(1,2,1);mesh(fftshift(G)); title("Gaussian"); 
+% B=get_fliter('Butterworth',D,D0,n);
+% subplot(1,2,2);mesh(fftshift(B));title("Butterworth"); 
+saveas(gcf,'result_3/a_3_fliter4.bmp')
+
+[multiL,lap]=deal_freq(spec,'L',row,col,L,U);
+[multiU,unmas]=deal_freq(spec,'U',row,col,L,U);
+% ratioG=cal_ratio('gauss',row,col,spec,multiL,multiU);
+% ratioB=cal_ratio('butter',row,col,spec,multiL,multiU);
+figure;
+subplot(1,3,1);imshow(fig);title("origin");
+subplot(1,3,2);imshow(lap,[]);title('Laplace');
+subplot(1,3,3);imshow(unmas,[]);title('Unmask');
+saveas(gcf,'result_3/a_3_result4.bmp');
+
+function ratio=cal_ratio(string,row,col,spec,multiG,multiB)
+x=0;
+a=0;
+for m = 1:1:row
+    for n = 1:1:col
+        a = a + (abs(spec(m,n))) ^ 2; 
+        switch string
+            case 'gauss'
+                x = x + (abs(multiG(m,n))) ^ 2;
+            case 'butter'
+                x = x + (abs(multiB(m,n))) ^ 2;
+        end
+    end
+end
+ratio=x/a;
+end
+
+function D=get_D(R,C)
+u=0:(R-1);
+v=0:(C-1);
+tempU=find(u > R/2);
+u(tempU)=u(tempU)-R;
+tempV=find(v > C/2);
+v(tempV)=v(tempV)-C;
+[V,U]=meshgrid(v,u);
+D = sqrt(U .^ 2 + V .^ 2);
+end
+
+function Fliter=get_fliter(str,D,D0,n)
+k=1;
+switch str
+    case 'Gaussian'
+        Fliter=1-exp(-(D.^2)./(2*(D0^2)));
+    case 'Butterworth'
+        Fliter=1-1./(1+(D/D0).^(2*n));
+    case 'Laplace'
+        Fliter = - 4 * pi * pi * D .^ 2;
+        
+    case 'unmask'
+        Fliter=k * (1 - exp(- D .^ 2 ./ (2 * D0 ^ 2))); 
+end
+Fliter=fftshift(Fliter);
+end
+
+function [multi,temp]=deal_freq(spec,fli,row,col,G,B)
+switch fli
+    case 'G'
+        multi = spec .* G;
+    case 'B'
+        multi = spec .* B;
+    case 'L'
+        multi = spec .* G;
+    case 'U'
+        multi = spec .* B;
+        
+end
+multi=ifftshift(multi);
+temp=real(ifft2(multi));
+temp=temp(1:row,1:col);
+end
+----------------------------------------------------------------------------------------------------
